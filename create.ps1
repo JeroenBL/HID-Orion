@@ -59,17 +59,17 @@ function Get-OrionUser {
     )
 
     try {
-       $output = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User/$ExternalId" -Method GET
+       $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User/$ExternalId" -Method GET
     } catch {
         $ex = $PSItem
         if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
             $errorObj = Resolve-HTTPError -Error $ex
-            $output = "Could not retrieve orion user. Error: $($errorObj.ErrorMessage)"
+            $response = "Could not retrieve orion user. Error: $($errorObj.ErrorMessage)"
         } else {
-            $output = "Could not retrieve orion user. Error: $($ex.Exception.Message)"
+            $response = "Could not retrieve orion user. Error: $($ex.Exception.Message)"
         }
     } finally {
-        Write-Output $output
+        Write-Output $response
     }
 }
 #endregion
@@ -87,11 +87,11 @@ try {
     if (-not ($dryRun -eq $true)){
         switch ($action) {
             'Create' {
-                $result = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User" -Method POST -Body ($account | ConvertTo-Json) -ContentType "application/json"
+                $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User" -Method POST -Body ($account | ConvertTo-Json) -ContentType "application/json"
             }
 
             'Correlate'{
-                $result = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User/$($account.externalId)" -Method GET
+                $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User/$($account.externalId)" -Method GET
             }
         }
     }
@@ -107,7 +107,7 @@ try {
 
 $result = [PSCustomObject]@{
     Success          = $success
-    AccountReference = $result.Id
+    AccountReference = $response.Id
     Auditlogs        = $auditLogs
     Account          = $account
 }
