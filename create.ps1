@@ -74,8 +74,9 @@ function Get-OrionUser {
 }
 #endregion
 
+# Main
 try {
-    # Begin
+    # Begin (data verification. Determine which path 'create or correlate' to follow)
         $response = Get-OrionUser -ExternalId $($account.externalId)
         if ($response -like "Could*"){
             $action = @("Create")
@@ -83,7 +84,7 @@ try {
             $action = @("Correlate")
         }
 
-    # Process
+    # Process (either create of correlate the account)
     if (-not ($dryRun -eq $true)){
         switch ($action) {
             'Create' {
@@ -120,7 +121,7 @@ try {
         Message = "Could not create Account for: $($p.DisplayName), Error: $errorMessage"
         IsError = $true
     })
-# End
+# End (gather results and return result to HelloID)
 } Finally {
     $result = [PSCustomObject]@{
         Success          = $success
