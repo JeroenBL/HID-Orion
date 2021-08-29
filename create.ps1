@@ -21,7 +21,7 @@ $account = [PSCustomObject]@{
     description  = ''
 }
 
-#region Helper Functions
+#region functions
 function Resolve-HTTPError {
     [CmdletBinding()]
     param (
@@ -88,28 +88,45 @@ try {
         switch ($action) {
             'Create' {
                 $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User" -Method POST -Body ($account | ConvertTo-Json) -ContentType "application/json"
+                if ($response){
+                    $auditLogs.Add([PSCustomObject]@{
+                        Message = "Account for: $($p.DisplayName) successfully created with id: $($response.Id)"
+                        IsError = $False
+                    })
+                }
             }
 
             'Correlate'{
                 $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User/$($account.externalId)" -Method GET
+                if ($response){
+                    $auditLogs.Add([PSCustomObject]@{
+                        Message = "Account for: $($p.DisplayName) successfully correlated with id: $($response.Id)"
+                        IsError = $False
+                    })
+                }
             }
         }
     }
 } catch {
     $ex = $PSItem
     if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = Resolve-HTTPError -Error $ex
-        Write-Error "Could not create orion user. Error: $errorMessage"
+        $errorObj = Resolve-HTTPError -Error $ex
+        $errorMessage = "Could not create orion user. Error: $($errorObj.ErrorMessage)"
     } else {
-        Write-Error "Could not create orion user. Error: $($ex.Exception.Message)"
+        $errorMessage = "Could not create orion user. Error: $($ex.Exception.Message)"
     }
+    Write-Error $errorMessage
+    $auditLogs.Add([PSCustomObject]@{
+        Message = "Could not create Account for: $($p.DisplayName), Error: $errorMessage"
+        IsError = $true
+    })
+# End
+} Finally {
+    $result = [PSCustomObject]@{
+        Success          = $success
+        AccountReference = $response.Id
+        Auditlogs        = $auditLogs
+        Account          = $account
+    }
+    Write-Output $result | ConvertTo-Json -Depth 10
 }
-
-$result = [PSCustomObject]@{
-    Success          = $success
-    AccountReference = $response.Id
-    Auditlogs        = $auditLogs
-    Account          = $account
-}
-
-Write-Output $result | ConvertTo-Json -Depth 10
