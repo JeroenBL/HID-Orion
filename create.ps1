@@ -84,29 +84,24 @@ try {
             $action = @("Correlate")
         }
 
-    # Process (either create of correlate the account)
+    # Process (either create or correlate the account)
     if (-not ($dryRun -eq $true)){
         switch ($action) {
             'Create' {
                 $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User" -Method POST -Body ($account | ConvertTo-Json) -ContentType "application/json"
-                if ($response){
-                    $auditLogs.Add([PSCustomObject]@{
-                        Message = "Account for: $($p.DisplayName) successfully created with id: $($response.Id)"
-                        IsError = $False
-                    })
-                }
+                break
             }
 
             'Correlate'{
                 $response = Invoke-RestMethod -Uri "$($config.BaseUrl)/api/User/$($account.externalId)" -Method GET
-                if ($response){
-                    $auditLogs.Add([PSCustomObject]@{
-                        Message = "Account for: $($p.DisplayName) successfully correlated with id: $($response.Id)"
-                        IsError = $False
-                    })
-                }
+                break
             }
         }
+
+        $auditLogs.Add([PSCustomObject]@{
+            Message = "$action account for: $($p.DisplayName) was successful. AccountReference is: $($response.Id)"
+            IsError = $False
+        })
     }
 } catch {
     $ex = $PSItem
@@ -121,7 +116,7 @@ try {
         Message = "Could not create Account for: $($p.DisplayName), Error: $errorMessage"
         IsError = $true
     })
-# End (gather results and return result to HelloID)
+# End (gather results and send result back to HelloID)
 } Finally {
     $result = [PSCustomObject]@{
         Success          = $success
