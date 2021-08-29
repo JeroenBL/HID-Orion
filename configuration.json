@@ -1,0 +1,12 @@
+[
+    {
+        "key": "BaseURL",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "The baseURL to the ORION API",
+            "placeholder": "http://localhost:8080",
+            "required": true
+        }
+    }
+]
