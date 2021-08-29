@@ -76,7 +76,7 @@ function Get-OrionUser {
 
 # Main
 try {
-    # Begin (data verification. Determine which path 'create or correlate' to follow)
+    # Begin
         $response = Get-OrionUser -ExternalId $($account.externalId)
         if ($response -like "Could*"){
             $action = @("Create")
@@ -84,7 +84,7 @@ try {
             $action = @("Correlate")
         }
 
-    # Process (either create or correlate the account)
+    # Process
     if (-not ($dryRun -eq $true)){
         switch ($action) {
             'Create' {
@@ -98,12 +98,14 @@ try {
             }
         }
 
+        $success = $true
         $auditLogs.Add([PSCustomObject]@{
             Message = "$action account for: $($p.DisplayName) was successful. AccountReference is: $($response.Id)"
             IsError = $False
         })
     }
 } catch {
+    $success = $false
     $ex = $PSItem
     if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-HTTPError -Error $ex
@@ -116,7 +118,7 @@ try {
         Message = "Could not create Account for: $($p.DisplayName), Error: $errorMessage"
         IsError = $true
     })
-# End (gather results and send result back to HelloID)
+# End
 } Finally {
     $result = [PSCustomObject]@{
         Success          = $success
